@@ -37,7 +37,7 @@ Last updated: 2026-10-17
 - External employer, job-provider, Browserbase, email, and AI operations were not run. Do not contact employers or submit applications.
 - The Agent backend/provider may still be unavailable; no provider operation was attempted.
 - GitHub Actions workflow registration was previously confirmed, but a fresh hosted CI result for the latest local commits was not checked. The current branch has not been pushed after these commits.
-- Claude MCP authentication has not been tested. Claude Code uses its own sign-in state; do not copy Codex tokens. Context7, Figma, and Vercel will need Claude-specific authorization if prompted. OpenAI Docs may work without sign-in, but verify from Claude. The MCP file contains only HTTPS URLs.
+- `claude mcp list` recognizes all four `.mcp.json` endpoints, but reports each as **Pending approval**. No Claude MCP call or sign-in has been tested. Start Claude Code in this project and approve the listed servers; complete any Claude-specific OAuth prompts. Do not copy Codex tokens. The MCP file contains only HTTPS URLs and no authentication values.
 
 ## Commands And Prerequisites
 
