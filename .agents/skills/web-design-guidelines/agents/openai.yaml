@@ -1,0 +1,4 @@
+interface:
+  display_name: "Web Design Guidelines"
+  short_description: "Focused web design guidelines guidance for software work"
+  default_prompt: "Use $web-design-guidelines for this task."

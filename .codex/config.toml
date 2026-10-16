@@ -1,0 +1,13 @@
+# Project-local MCP endpoints. No credentials are bundled.
+# Trust this project in Codex, then complete OAuth locally when prompted.
+[mcp_servers.openaiDeveloperDocs]
+url = "https://developers.openai.com/mcp"
+
+[mcp_servers.context7]
+url = "https://mcp.context7.com/mcp"
+
+[mcp_servers.figma]
+url = "https://mcp.figma.com/mcp"
+
+[mcp_servers.vercel]
+url = "https://mcp.vercel.com"

@@ -1,0 +1,14 @@
+interface:
+  display_name: Software Build Workflow
+  short_description: Product design, implementation and honest verification
+  default_prompt: Use $software-build-workflow to plan, build, test and review this
+    product change.
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
+  allow_implicit_invocation: true

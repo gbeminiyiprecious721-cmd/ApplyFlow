@@ -1,0 +1,13 @@
+interface:
+  display_name: Differential Review
+  short_description: Review code changes for security regressions and impact
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+  brand_color: '#D83A34'
+policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
+  allow_implicit_invocation: true

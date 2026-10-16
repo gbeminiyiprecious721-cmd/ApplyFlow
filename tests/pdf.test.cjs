@@ -1,0 +1,12 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const window={jspdf:require('../dist/vendor/jspdf.umd.min.js')};
+const bytes=fs.readFileSync(__dirname+'/../dist/vendor/DejaVuSans.ttf');
+const context=vm.createContext({window,Blob,btoa,fetch:async()=>({ok:true,arrayBuffer:async()=>bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength)})});
+vm.runInContext(fs.readFileSync(__dirname+'/../dist/application-pdf.js','utf8'),context);
+(async()=>{const source='Ọláwálé Adébáyọ̀ García — Data Scientist\nRésumé and Python • Ẹ káàárọ̀, iṣẹ́ àpẹẹrẹ\n'+Array.from({length:160},(_,i)=>'Verified project '+i+': Built and tested the recorded analysis.').join('\n');
+ const pdf=await window.ApplyFlowPdf.fromText(source);assert.equal(pdf.type,'application/pdf');assert.equal(Buffer.from(await pdf.arrayBuffer()).subarray(0,5).toString(),'%PDF-');
+ fs.writeFileSync(process.env.APPLYFLOW_PDF_QA_PATH||require('node:path').join(require('node:os').tmpdir(),'applyflow-pdf-qa.pdf'),Buffer.from(await pdf.arrayBuffer()));
+ const extracted=require('node:child_process').execFileSync('pdftotext',['-layout',process.env.APPLYFLOW_PDF_QA_PATH||require('node:path').join(require('node:os').tmpdir(),'applyflow-pdf-qa.pdf'),'-'],{encoding:'utf8'});for(const line of source.split('\n'))assert(extracted.normalize('NFC').includes(line.normalize('NFC')),'PDF text must preserve '+line);
+ await assert.rejects(window.ApplyFlowPdf.fromText('Unsupported test 😀'),/cannot display/);await assert.rejects(window.ApplyFlowPdf.fromText(''),/empty/);
+ console.log('PDF: Unicode, portable font, long multipage document and unsupported-character gates passed.');
+})().catch(e=>{console.error(e);process.exitCode=1;});

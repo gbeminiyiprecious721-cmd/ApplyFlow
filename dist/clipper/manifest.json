@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "ApplyFlow Autofill & Job Clipper",
+  "version": "1.1.2",
+  "description": "Autofill application forms from your verified ApplyFlow profile and save job listings.",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://tbggqauyesloekynqavb.supabase.co/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "ApplyFlow Autofill"
+  },
+  "externally_connectable": {
+    "matches": [
+      "http://127.0.0.1/*",
+      "http://localhost/*",
+      "https://applyflow-review.gbeminiyiprecious721.chatgpt.site/*"
+    ]
+  }
+}

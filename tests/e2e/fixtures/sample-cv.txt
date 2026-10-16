@@ -1,0 +1,13 @@
+Ọláwálé Adébáyọ̀ García
+olawale@example.com
+Location: Lagos, Nigeria
+SUMMARY
+Data analyst. Résumé sample: Ẹ káàárọ̀, iṣẹ́ àpẹẹrẹ.
+SKILLS
+Python, SQL, Excel
+EXPERIENCE
+Data Analyst at Example Test Company
+2022 – 2025
+Analysed a sample dataset with Python and SQL.
+EDUCATION
+BSc Statistics, Example University

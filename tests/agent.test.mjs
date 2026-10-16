@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import {safeApplicationUrl,validateSettings,eligiblePacket,interpretResult,stableJson} from '../backend/agent-policy.mjs';
+for(const u of ['http://company.com/apply','https://127.0.0.1/a','https://10.0.0.1/a','https://x.internal/a','https://u:p@company.com/a','https://[::1]/a'])assert.throws(()=>safeApplicationUrl(u));
+assert.equal(safeApplicationUrl('https://jobs.example.com/apply'),'https://jobs.example.com/apply');
+const s=validateSettings({mode:'auto',enabled:true,consent:true,daily_limit:5,minimum_match:85,countries:[],excluded_companies:[]});
+assert.throws(()=>validateSettings({...s,consent:false}));assert.throws(()=>validateSettings({...s,consent:true,daily_limit:100}));
+const a={preparation_state:'READY',application_url_snapshot:'https://jobs.example.com/apply'},m={match_score:92,eligibility:'PASS',hard_failures:[]},d=[{document_type:'RESUME',verification_status:'SUPPORTED'}],p={full_name:'Alex',email:'alex@example.com',onboarding_completed_at:'2026-10-10'},j={company:'Example',location:'Berlin, Germany',active_status:'ACTIVE'};
+assert.equal(eligiblePacket(a,m,d,p,s,j),a.application_url_snapshot);
+for(const [app,match,docs,profile,settings,job]of [[{...a,applied_at:'today'},m,d,p,s,j],[a,{...m,hard_failures:['visa']},d,p,s,j],[a,{...m,eligibility:'REVIEW'},d,p,s,j],[a,m,[],p,s,j],[a,m,[{...d[0],verification_status:'BLOCKED'}],p,s,j],[a,m,d,p,{...s,countries:['Canada']},j],[a,m,d,p,{...s,excluded_companies:['Example']},j],[a,m,d,p,s,{...j,active_status:'CLOSED'}]])assert.throws(()=>eligiblePacket(app,match,docs,profile,settings,job));
+const good={status:'COMPLETED',result:{current_url:a.application_url_snapshot,submit_activated:true,confirmation_text:'Your application has been received.'}};
+assert.equal(interpretResult(good,a.application_url_snapshot,true).status,'SUBMITTED');
+assert.equal(interpretResult(good,a.application_url_snapshot,false).status,'UNCONFIRMED');
+assert.notEqual(interpretResult({...good,result:{...good.result,confirmation_text:''}},a.application_url_snapshot,true).status,'SUBMITTED');
+assert.notEqual(interpretResult({...good,result:{...good.result,current_url:'https://other.example.com'}},a.application_url_snapshot,true).status,'SUBMITTED');
+assert.equal(interpretResult({status:'PAUSED',result:{unanswered_fields:['visa']}},a.application_url_snapshot,true).status,'NEEDS_REVIEW');
+assert.equal(stableJson({b:2,a:1}),stableJson({a:1,b:2}));assert.equal(stableJson({date:new Date('2026-10-10T00:00:00Z')}),stableJson({date:'2026-10-10T00:00:00.000Z'}));
+console.log('Agent policy tests passed: eligibility, consent, limits, URL checks, snapshot order, and confirmation evidence.');

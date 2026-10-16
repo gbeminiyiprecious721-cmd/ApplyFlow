@@ -1,0 +1,13 @@
+interface:
+  display_name: Vercel React Best Practices
+  short_description: Focused vercel react best practices guidance for software work
+  default_prompt: Use $vercel-react-best-practices for this task.
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
+  allow_implicit_invocation: true

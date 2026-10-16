@@ -1,0 +1,26 @@
+/* The flow graphic is decorative: it represents progress, never live activity. */
+.auth-story{isolation:isolate;background:radial-gradient(ellipse at 10% 25%,#22616855,transparent 65%),linear-gradient(150deg,#14253d,#0c1424 70%)}
+.auth-story:before{content:'';position:absolute;inset:-20%;z-index:-1;pointer-events:none;background:radial-gradient(ellipse at 25% 30%,#3ad4b523,transparent 40%),radial-gradient(ellipse at 75% 70%,#598be52b,transparent 45%);animation:flowAurora 18s ease-in-out infinite alternate}
+.auth-story:after{animation:flowOrbit 24s ease-in-out infinite alternate;opacity:.8}
+.auth-brand{position:relative;z-index:2}.auth-logo{box-shadow:0 5px 20px #60d9c72e,inset 0 1px 0 #ffffff70}
+.auth-flow-art{position:absolute;inset:0;width:100%;height:100%;z-index:-1;opacity:.36;pointer-events:none}
+.auth-flow-art .flow-grid{stroke:#9dd7e1;stroke-width:.5;opacity:.11}
+.auth-flow-art .flow-route{stroke:#83dcca;stroke-width:1;fill:none;opacity:.36}
+.auth-flow-art .flow-trail{stroke:#a4f0de;stroke-width:2;fill:none;stroke-dasharray:6 210;animation:flowTravel 18s linear infinite;filter:drop-shadow(0 0 5px #75e3c9)}
+.auth-flow-art .flow-node{fill:#10283d;stroke:#90ddcf;stroke-width:1}
+.auth-flow-art .flow-card{fill:#18354d;stroke:#87cecd;stroke-width:.7;opacity:.65}
+.auth-flow-art .flow-line{stroke:#a4dbdb;stroke-width:2;opacity:.65}
+.auth-panel{position:relative;isolation:isolate;background:radial-gradient(ellipse at 100% 5%,#25324c48,transparent 65%),#0b1220}
+.auth-panel-inner{border:1px solid #33455b55;border-radius:24px;padding:32px;background:linear-gradient(155deg,#14203480,#0e172866);box-shadow:0 25px 80px #00000038,inset 0 1px 0 #ffffff08;max-width:480px}
+.auth-primary{background:linear-gradient(145deg,#9ae8d4,#69cbb4);border-color:#9be6d3;box-shadow:0 7px 0 #276656,0 14px 28px #64d8b923,inset 0 1px 0 #ffffff80;position:relative;overflow:hidden;transition:transform .22s,box-shadow .22s,filter .22s}
+.auth-primary:before{content:'';position:absolute;inset:-60% auto -60% -65%;width:38%;background:linear-gradient(90deg,transparent,#ffffff35,transparent);transform:skewX(-20deg);transition:left .65s;pointer-events:none}
+.auth-primary:hover:before{left:130%}.auth-primary:hover{background:linear-gradient(145deg,#b3f3e2,#80ddc7);transform:translateY(-3px);box-shadow:0 10px 0 #276656,0 21px 36px #64d8b932,inset 0 1px 0 #fff9}
+.auth-primary:active{transform:translateY(4px);box-shadow:0 2px 0 #276656,0 6px 14px #64d8b91a}
+.auth-secondary{box-shadow:0 4px 0 #060d18,0 9px 18px #0003,inset 0 1px 0 #ffffff09;transition:transform .2s,box-shadow .2s,border-color .2s}
+.auth-secondary:hover{transform:translateY(-2px);border-color:#628b99;box-shadow:0 6px 0 #060d18,0 13px 24px #0004}.auth-secondary:active{transform:translateY(2px);box-shadow:0 1px 0 #060d18}
+.auth-tabs button[aria-selected=true]{box-shadow:0 3px 9px #0005,inset 0 1px 0 #ffffff12}
+.auth-primary:disabled,.auth-primary:disabled:hover,.auth-secondary:disabled,.auth-secondary:disabled:hover{transform:none;box-shadow:none}
+.btn{box-shadow:0 3px 8px #00000018,inset 0 1px 0 #ffffff0b;transition:transform .18s,box-shadow .18s}.btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 16px #00000024}.btn:active:not(:disabled){transform:translateY(1px);box-shadow:0 1px 3px #0002}
+@keyframes flowTravel{to{stroke-dashoffset:-864}}@keyframes flowAurora{to{transform:translate(5%,5%) rotate(8deg);opacity:.6}}@keyframes flowOrbit{to{transform:translateY(-65px) scale(1.1)}}
+@media(max-width:800px){.auth-panel-inner{padding:26px 22px;border-radius:20px}.auth-panel{padding:26px 18px}.auth-flow-art{opacity:.22}.auth-story:after{width:300px;height:300px}.auth-story-body{position:relative}.auth-story h1{font-size:32px}.auth-flow-art .flow-trail{animation-duration:26s}}
+@media(prefers-reduced-motion:reduce){.auth-story:before,.auth-story:after,.auth-flow-art .flow-trail{animation:none}.auth-primary,.auth-secondary,.btn{transition:none}.auth-primary:before{display:none}.auth-primary:hover,.auth-secondary:hover,.btn:hover:not(:disabled){transform:none}}

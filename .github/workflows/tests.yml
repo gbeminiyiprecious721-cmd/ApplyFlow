@@ -1,0 +1,71 @@
+name: ApplyFlow tests
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  browser-tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y poppler-utils
+      - if: runner.os == 'Windows'
+        run: choco install poppler -y --no-progress
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - if: runner.os == 'Linux'
+        run: npx playwright install --with-deps chromium msedge
+      - if: runner.os == 'Windows'
+        run: npx playwright install chromium msedge
+      - run: npm run test:e2e
+        env:
+          E2E_TARGET: local
+          E2E_BASE_URL: http://127.0.0.1:4173
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: local-browser-report-${{ matrix.os }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+  staging-isolation:
+    if: ${{ vars.APPLYFLOW_E2E_STAGING_URL != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: sudo apt-get update && sudo apt-get install -y poppler-utils
+      - run: npm test
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium msedge
+      - run: npm run test:e2e
+        env:
+          E2E_TARGET: staging
+          E2E_SANDBOX: "1"
+          E2E_BASE_URL: ${{ vars.APPLYFLOW_E2E_STAGING_URL }}
+          E2E_SUPABASE_ORIGIN: ${{ vars.APPLYFLOW_E2E_SUPABASE_ORIGIN }}
+          E2E_EMAIL_DOMAIN: ${{ vars.APPLYFLOW_E2E_EMAIL_DOMAIN }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: staging-browser-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7

@@ -1,0 +1,13 @@
+interface:
+  display_name: Frontend Design
+  short_description: Intentional visual design for software interfaces
+  default_prompt: Use $frontend-design to improve this interface.
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
+  allow_implicit_invocation: true
