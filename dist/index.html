@@ -203,6 +203,7 @@
 <link rel="stylesheet" href="product.css">
 <link rel="stylesheet" href="workspaces.css">
 <link rel="stylesheet" href="workspace-polish.css">
+<link rel="stylesheet" href="app-refinements.css">
 </head>
 <body>
   <div class="app">
@@ -830,7 +831,7 @@
     function saveUiPrefs(p) { localStorage.setItem(UI_PREFS, JSON.stringify(Object.assign(uiPrefs(), p))); }
     const SB_URL = 'https://tbggqauyesloekynqavb.supabase.co';
     const SB_ANON = 'APPLYFLOW_LOCAL_KEY_NOT_INCLUDED';
-    const supabaseClient = window.supabase.createClient(SB_URL, SB_ANON, { auth: { persistSession: true, autoRefreshToken: true } });
+    const supabaseClient = window.supabase.createClient(SB_URL, SB_ANON, { auth: { persistSession: true, autoRefreshToken: true }, global: { fetch } });
     // Keep auth callbacks on the build the user actually opened. Hard-coding an
     // older deployment caused successful sign-ins to appear broken.
     const AUTH_REDIRECT = new URL(location.pathname, location.origin).href;
@@ -1528,6 +1529,12 @@
       remoteSavePending = true;
       if (remoteSaveInFlight) return remoteSaveInFlight;
       const st = uiElement('dbStatus');
+      if (window.__APPLYFLOW_LOCAL_READ_ONLY__) {
+        remoteSavePending = false;
+        setWorkspaceSync('readonly','Read-only preview. Changes are not saved to your account.');
+        if (st) st.textContent = 'Local preview is read-only. Changes are not saved.';
+        return;
+      }
       if (!state.session || !state.signedIn) {
         if (st) st.textContent = 'Sign in to save private records in the managed database. Guest cache is not authoritative.';
         return;
@@ -1561,7 +1568,8 @@
       try {
         if (!state.signedIn) localStorage.setItem('applyflow-v2-guest', JSON.stringify(criticalPayload()));
       } catch {}
-      if(state.signedIn)setWorkspaceSync('pending','Changes waiting to save…');
+      if(state.signedIn&&window.__APPLYFLOW_LOCAL_READ_ONLY__)setWorkspaceSync('readonly','Read-only preview. Changes are not saved to your account.');
+      else if(state.signedIn)setWorkspaceSync('pending','Changes waiting to save…');
       else setWorkspaceSync('guest','Guest draft · sign in to save');
       clearTimeout(persistTimer);
       persistTimer = setTimeout(persistRemote, 400);

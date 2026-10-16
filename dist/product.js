@@ -43,6 +43,36 @@
  const action=rev.length?['Review applications',rev.length+' application'+(rev.length===1?' needs':'s need')+' your attention.','review']:['Discover opportunities','Keep your search moving with relevant new roles.','search'];const next=nextBestAction();const jobs=rankJobs(m.jobs.filter(j=>!['Archived','Rejected'].includes(j.stage))).slice(0,3),events=(state.logs||[]).filter(l=>!/(supabase|worker|fixture|rpc|gateway|diagnostic|queue|rls|cost)/i.test(l.msg)).slice(0,5),upcoming=(w().contacts||[]).filter(c=>c.follow_up||c.due||c.followup_date||c.follow_up_date||c.dueDate).slice(0,4);
  $('productHome').innerHTML=`<section class="hero-briefing"><div><h2>${greet}, ${esc((state.profile.name||'there').split(' ')[0])}</h2><p>${esc(action[1])}</p></div><button class="btn primary" data-view="${action[2]}">${action[0]}</button></section><div class="metric-strip">${[['Matches',m.matches.length],['Prepared',m.prepared.length],['Applied',m.sent.length],['Interviews',m.interviews.length]].map(([l,v])=>`<div class="metric"><span>${l}</span><strong>${v}</strong></div>`).join('')}</div><div class="home-columns"><div><section class="product-section"><div class="section-heading"><h2>Recommended opportunities</h2><button class="btn tertiary" data-view="search">See all</button></div>${jobs.map(j=>`<div class="opportunity-row">${avatar(j)}<div><h3>${esc(j.job_title||j.title)}</h3><p class="meta">${esc(j.company)} · ${esc(j.location||j.loc||'Location not listed')}</p><span class="status-badge">${jobMatchScore(j)==null?'Not analysed':Math.round(jobMatchScore(j))+'% match'}</span></div><button class="btn" data-product-job="${esc(idOf(j))}">View job</button></div>`).join('')||empty('No recommendations yet','Discover and analyse opportunities to see them here.')}</section><section class="product-section"><h2>Application pipeline</h2><div class="pipeline-summary">${['Saved','Preparing','Needs Review','Applied','Interview','Offer'].map(s=>`<span>${esc(s)} <strong>${m.jobs.filter(j=>stage(j)===s).length}</strong></span>`).join('')}</div><button class="btn tertiary" data-view="pipeline">Open Applications</button></section></div><div><section class="product-section"><h2>Next best action</h2><h3>${esc(plain(next.title))}</h3><p class="meta">${esc(plain(next.body))}</p><button class="btn" data-product-next="${esc(next.view)}">${esc(plain(next.cta))}</button></section><section class="product-section"><h2>Agent activity</h2><ul class="activity-list">${events.map(e=>`<li><time>${dateTime(e.t)}</time>${esc(plain(e.msg))}</li>`).join('')||'<li>No recent activity recorded.</li>'}</ul></section><section class="product-section"><h2>Interviews & follow-ups</h2><p class="meta">${m.interviews.length?m.interviews.length+' recorded interview opportunities.':'No interviews recorded yet.'}</p>${upcoming.map(c=>`<p>${esc(c.name)} · ${fmtDate(c.follow_up||c.due||c.followup_date||c.follow_up_date||c.dueDate)}</p>`).join('')}<button class="btn tertiary" data-view="contacts">Plan follow-ups</button><button class="btn tertiary" data-view="practice">Prepare for interview</button></section></div></div>`;}
  const oldHome=renderHome;renderHome=function(){oldHome();renderProductHome();};
+ const originalProductHome=renderProductHome;
+ renderProductHome=function(){
+  originalProductHome();
+  const root=$('productHome');
+  const sections=[...root.querySelectorAll('.home-columns .product-section')];
+  const heading=section=>section.querySelector(':scope > h2')?.textContent.trim();
+  const pipeline=sections.find(section=>heading(section)==='Application pipeline');
+  if(pipeline){
+   const parent=pipeline.parentElement;
+   const counts=[...pipeline.querySelectorAll('.pipeline-summary strong')].reduce((sum,node)=>sum+Number(node.textContent||0),0);
+   const details=document.createElement('details');details.className='home-disclosure';
+   const summary=document.createElement('summary');summary.innerHTML=`<span>Application pipeline</span><span class="meta">${counts} tracked</span>`;
+   const content=document.createElement('div');content.className='home-disclosure-content';
+   [...pipeline.children].filter(node=>node.tagName!=='H2').forEach(node=>content.append(node));
+   details.append(summary,content);parent.insertBefore(details,pipeline);pipeline.remove();
+  }
+  const activity=sections.find(section=>heading(section)==='Agent activity');
+  const followups=sections.find(section=>heading(section)==='Interviews & follow-ups');
+  if(activity&&followups){
+   const parent=activity.parentElement;
+    const recentCount=(state.logs||[]).filter(entry=>!/(supabase|worker|fixture|rpc|gateway|diagnostic|queue|rls|cost)/i.test(entry.msg)).slice(0,5).length;
+    const followupCount=(w().contacts||[]).filter(contact=>contact.follow_up||contact.due||contact.followup_date||contact.follow_up_date||contact.dueDate).slice(0,4).length;
+    const interviewCount=metrics().interviews.length;
+   const details=document.createElement('details');details.className='home-disclosure home-progress-disclosure';
+    const summary=document.createElement('summary');summary.innerHTML=`<span>Recent activity & follow-ups</span><span class="meta">${recentCount+followupCount+interviewCount} updates</span>`;
+   const content=document.createElement('div');content.className='home-secondary-grid';
+   activity.classList.add('home-secondary-item');followups.classList.add('home-secondary-item');
+   details.append(summary,content);parent.insertBefore(details,activity);content.append(activity,followups);
+  }
+ };
  $('startAgent').addEventListener('click',()=>{$('autoOn').value='on';if(state.autopilot)state.autopilot.paused=false;},true);
  ['startAgent','pauseAgent','stopAutopilot'].forEach(id=>$(id).addEventListener('click',()=>{renderAgentProduct();}));
  // Phase 5: use existing filtering/ranking, condense its output without changing source queries.

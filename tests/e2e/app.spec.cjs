@@ -12,6 +12,28 @@ const {
   importFixture,
   profile,
 } = require("./helpers.cjs");
+
+function channels(value) {
+  return value.match(/[\d.]+/g).map(Number);
+}
+
+function luminance(rgb) {
+  const [red, green, blue] = rgb.map((channel) => {
+    const normalized = channel / 255;
+    return normalized <= 0.04045
+      ? normalized / 12.92
+      : ((normalized + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+}
+
+function contrast(first, second) {
+  const [lighter, darker] = [luminance(first), luminance(second)].sort(
+    (a, b) => b - a,
+  );
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
 test.beforeEach(async ({ context, baseURL }) => protect(context, baseURL));
 test("every shipped HTML response declares UTF-8", async ({
   request,
@@ -190,6 +212,76 @@ test("retired controls absent; unavailable sources actually disabled", async ({
       .locator("nav[aria-label=Primary] [data-view=" + view + "]")
       .click();
   expect(errors).toEqual([]);
+});
+test("primary navigation labels remain readable when hovered", async ({
+  page,
+}) => {
+  await signup(page);
+  await onboard(page);
+  const buttons = page.locator('nav[aria-label="Primary"] .nav-btn[data-view]');
+  for (const button of await buttons.all()) {
+    await button.hover();
+    const colors = await button.evaluate((element) => {
+      const buttonStyle = getComputedStyle(element);
+      const navStyle = getComputedStyle(element.closest("nav"));
+      return {
+        text: buttonStyle.color,
+        overlay: buttonStyle.backgroundColor,
+        surface: navStyle.backgroundColor,
+        label: element.textContent.trim(),
+      };
+    });
+    const text = channels(colors.text);
+    const overlay = channels(colors.overlay);
+    const surface = channels(colors.surface);
+    const alpha = overlay.length > 3 ? overlay[3] : 1;
+    const background = surface.map(
+      (channel, index) => overlay[index] * alpha + channel * (1 - alpha),
+    );
+    expect(
+      contrast(text, background),
+      `${colors.label} hover contrast`,
+    ).toBeGreaterThanOrEqual(4.5);
+  }
+});
+test("local read-only preview explains saves without offering a futile retry", async ({
+  page,
+}) => {
+  await signup(page);
+  await onboard(page);
+  await page.evaluate(() => {
+    window.__APPLYFLOW_LOCAL_READ_ONLY__ = true;
+    persist();
+  });
+  await expect(page.locator("#workspaceSync")).toHaveAttribute(
+    "data-phase",
+    "readonly",
+  );
+  await expect(page.locator("#workspaceSyncText")).toHaveText(
+    /read-only.*not saved/i,
+  );
+  await expect(page.locator("#workspaceSyncRetry")).toBeHidden();
+});
+test("overview keeps pipeline and activity available behind clear disclosures", async ({
+  page,
+}) => {
+  await signup(page);
+  await onboard(page);
+  await page.evaluate(() => {
+    state.packages.push({ job_id: "overview-test-packet", state: "NEEDS_REVIEW" });
+    showView("overview");
+    ApplyFlowProduct.renderProductHome();
+  });
+  const disclosures = page.locator("#productHome details.home-disclosure");
+  await expect(disclosures).toHaveCount(2);
+  await expect(disclosures.nth(0)).not.toHaveAttribute("open", "");
+  await expect(disclosures.nth(1)).not.toHaveAttribute("open", "");
+  await disclosures.nth(0).locator("summary").click();
+  await expect(disclosures.nth(0)).toHaveAttribute("open", "");
+  await expect(disclosures.nth(0)).toContainText("Open Applications");
+  await disclosures.nth(1).locator("summary").click();
+  await expect(disclosures.nth(1)).toHaveAttribute("open", "");
+  await expect(disclosures.nth(1)).toContainText("Plan follow-ups");
 });
 test("mobile viewport and dark mode screenshots", async ({
   page,

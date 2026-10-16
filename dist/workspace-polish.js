@@ -3,7 +3,7 @@
  const $=id=>uiElement(id);
  const status=document.createElement('div');status.id='workspaceSync';status.className='workspace-sync';status.innerHTML='<span id="workspaceSyncText" role="status" aria-live="polite"></span><button class="btn tertiary" type="button" id="workspaceSyncRetry" hidden>Retry</button>';
  document.querySelector('header.top').after(status);
- function sync(info){status.dataset.phase=info.phase;$('workspaceSyncText').textContent=info.message;$('workspaceSyncRetry').hidden=!['error','restore-error'].includes(info.phase);}
+ function sync(info){if(window.__APPLYFLOW_LOCAL_READ_ONLY__&&['idle','pending','saving','saved'].includes(info.phase))info={phase:'readonly',message:'Read-only preview. Changes are not saved to your account.'};status.dataset.phase=info.phase;$('workspaceSyncText').textContent=info.message;$('workspaceSyncRetry').hidden=!['error','restore-error'].includes(info.phase);}
  window.addEventListener('applyflow:sync',e=>sync(e.detail));sync(workspaceSync);
  $('workspaceSyncRetry').onclick=async()=>{const button=$('workspaceSyncRetry');button.disabled=true;try{if(restoredAccountId!==uid())await hydrateFromRemote();else await persistRemote();}catch{}finally{button.disabled=false;}};
  // Candidate editing separates contact facts, career facts and search preferences.
