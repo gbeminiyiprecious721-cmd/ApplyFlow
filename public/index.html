@@ -819,7 +819,7 @@
     function saveUiPrefs(p) { localStorage.setItem(UI_PREFS, JSON.stringify(Object.assign(uiPrefs(), p))); }
     const SB_URL = 'https://tbggqauyesloekynqavb.supabase.co';
     const SB_ANON = 'APPLYFLOW_LOCAL_KEY_NOT_INCLUDED';
-    const supabaseClient = window.supabase.createClient(SB_URL, SB_ANON, { auth: { persistSession: true, autoRefreshToken: true } });
+    const supabaseClient = window.supabase.createClient(SB_URL, SB_ANON, { auth: { persistSession: true, autoRefreshToken: true }, global: { fetch } });
     // Keep auth callbacks on the build the user actually opened. Hard-coding an
     // older deployment caused successful sign-ins to appear broken.
     const AUTH_REDIRECT = new URL(location.pathname, location.origin).href;

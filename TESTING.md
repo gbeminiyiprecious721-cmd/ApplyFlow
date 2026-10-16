@@ -16,6 +16,8 @@ npm run build
 
 The default browser suite renders the shipped app in a real browser, with an explicitly isolated test adapter for authentication, database and storage. It checks signup, CV onboarding, Unicode values, reload persistence, local fixture URL import, actual PDF download/text extraction, deletion cancel/confirm, account-switch form clearing, retired DOM controls, disabled sources, mobile layout, and light/dark screenshots. This adapter is **not evidence that Supabase RLS or real login works**.
 
+To use the existing project for local sign-in, confirm project ref `tbggqauyesloekynqavb` in the Supabase dashboard and copy its public publishable key (or legacy anon key). Run `scripts\Start-ApplyFlow-Local.ps1` in PowerShell, then open http://127.0.0.1:4173 and enter the key in the masked setup field. The local server validates it with a read-only Auth settings request, keeps it in memory only, and blocks database/storage writes. The setup endpoint binds to loopback and does not log the key. Supabase auth/session calls, reads, and Agent STATUS are allowed; agent mutations and other external requests are blocked. Do not use a service-role or `sb_secret_` key. Stop the server with Ctrl+C.
+
 All external employer, job-source, AI and Browserbase requests are blocked. Packet download uses a deterministic prepared fixture; it does not test AI preparation or submit applications. Traces and video are disabled; screenshots contain synthetic data. Reports are under `playwright-report/`, downloads/screenshots under `test-results/`; these directories are ignored by Git.
 
 ## Run against an existing staging deployment

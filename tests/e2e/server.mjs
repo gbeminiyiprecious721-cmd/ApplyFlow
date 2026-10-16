@@ -3,10 +3,22 @@ import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 import { createStaticHandler } from "../../worker/static-response.mjs";
+import {
+  injectLocalSupabaseConfig,
+  localSupabaseConfig,
+  proxyLocalAgentStatus,
+  renderLocalSetupPage,
+  verifyLocalSupabaseConfig,
+} from "../../scripts/local-supabase-config.mjs";
 const root = path.resolve("dist"),
   tables = new Map(),
   files = new Map(),
   accounts = new Map();
+let localConfig = process.env.APPLYFLOW_LOCAL_SUPABASE_KEY
+  ? localSupabaseConfig()
+  : null;
+const localSetupMode =
+  process.env.APPLYFLOW_LOCAL_SETUP === "1" && process.env.APPLYFLOW_E2E !== "1";
 const denied = { data: null, error: { message: "Access denied" } };
 const ok = (data) => ({ data, error: null });
 function api(q) {
@@ -154,12 +166,82 @@ const handler = createStaticHandler((url) => {
     return null;
   return {
     type: types[path.extname(file)] || "application/octet-stream",
-    body: fs.readFileSync(file),
+    body:
+      url === "/index.html" && localConfig
+        ? Buffer.from(
+            injectLocalSupabaseConfig(fs.readFileSync(file, "utf8"), localConfig),
+          )
+        : fs.readFileSync(file),
   };
 });
 const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, "http://127.0.0.1");
+    if (localSetupMode && !["127.0.0.1", "::1"].includes(req.socket.remoteAddress)) {
+      res.writeHead(403);
+      res.end();
+      return;
+    }
+    if (localSetupMode && url.pathname === "/__local/agent-status") {
+      if (!localConfig) {
+        res.writeHead(401);
+        res.end();
+        return;
+      }
+      const request = new Request("http://127.0.0.1/__local/agent-status", {
+        method: req.method,
+        headers: req.headers,
+        body: req.method === "POST" ? req : undefined,
+        duplex: req.method === "POST" ? "half" : undefined,
+      });
+      const response = await proxyLocalAgentStatus(request);
+      res.writeHead(response.status, Object.fromEntries(response.headers));
+      res.end(Buffer.from(await response.arrayBuffer()));
+      return;
+    }
+    if (localSetupMode && url.pathname === "/__local/config") {
+      if (req.method !== "POST") {
+        res.writeHead(405, { Allow: "POST" });
+        res.end();
+        return;
+      }
+      let body = "";
+      for await (const chunk of req) body += chunk;
+      if (body.length > 4096) {
+        res.writeHead(413);
+        res.end();
+        return;
+      }
+      try {
+        const candidate = localSupabaseConfig({
+          APPLYFLOW_LOCAL_SUPABASE_KEY: JSON.parse(body).key,
+        });
+        await verifyLocalSupabaseConfig(candidate);
+        localConfig = candidate;
+        res.writeHead(204);
+        res.end();
+      } catch (error) {
+        const status = error.message.includes("rejected the local public key")
+          ? 401
+          : 400;
+        res.writeHead(status, { "Cache-Control": "no-store" });
+        res.end();
+      }
+      return;
+    }
+    if (
+      localSetupMode &&
+      !localConfig &&
+      req.method === "GET" &&
+      ["/", "/index.html"].includes(url.pathname)
+    ) {
+      res.writeHead(200, {
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "no-store",
+      });
+      res.end(renderLocalSetupPage());
+      return;
+    }
     if (url.pathname === "/__e2e/api") {
       let body = "";
       for await (const chunk of req) body += chunk;

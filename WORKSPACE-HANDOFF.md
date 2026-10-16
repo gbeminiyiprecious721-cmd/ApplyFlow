@@ -41,6 +41,8 @@ node tests/e2e/server.mjs
 
 Open http://127.0.0.1:4173. This manual preview has no working live login because credentials are omitted. The Playwright suite injects its isolated authentication/data adapter separately; merely starting this server does not enable that adapter in a manual browser. Read TESTING.md for the exact test setup.
 
+For a local-only sign-in against the existing ApplyFlow Supabase project, confirm project ref `tbggqauyesloekynqavb` in the Supabase dashboard and copy only its public publishable key (or legacy anon key). Run `scripts\Start-ApplyFlow-Local.ps1` from PowerShell in the project root, then open http://127.0.0.1:4173. Enter the key in the browser's masked setup field. The loopback server validates it with a read-only Auth settings request and keeps it in process memory only; it is not written to disk or Git. Local database/storage writes are blocked. Supabase auth/session calls, reads, and the read-only Agent STATUS action are allowed; other external requests and agent mutations are blocked. Do not use a service-role or `sb_secret_` key. Stop the server with Ctrl+C.
+
 ## Scope and outstanding verification
 
 Existing testing records describe the earlier Work run: eleven unit/regression suites and eight local Chromium checks passed; Edge, staging signup/RLS/private storage, real extension operation and GitHub Actions remained unverified. This packaging task did not rerun those tests or verify Windows behavior. Verify fresh results locally before claiming completion.

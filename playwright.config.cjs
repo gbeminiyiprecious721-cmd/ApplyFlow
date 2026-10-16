@@ -74,7 +74,10 @@ module.exports = defineConfig({
   webServer: {
     command: "node tests/e2e/server.mjs",
     url: fixtureURL,
-    env: { E2E_PORT: process.env.E2E_PORT || fixture.port || "4173" },
+    env: {
+      E2E_PORT: process.env.E2E_PORT || fixture.port || "4173",
+      APPLYFLOW_E2E: "1",
+    },
     reuseExistingServer: false,
     timeout: 15000,
   },
