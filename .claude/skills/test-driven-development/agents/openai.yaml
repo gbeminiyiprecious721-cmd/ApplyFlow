@@ -1,0 +1,13 @@
+interface:
+  display_name: Test Driven Development
+  short_description: Focused test driven development guidance for software work
+  default_prompt: Use $test-driven-development for this task.
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
+  allow_implicit_invocation: true

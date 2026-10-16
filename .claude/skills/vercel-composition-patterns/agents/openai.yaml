@@ -1,0 +1,13 @@
+interface:
+  display_name: React Composition Patterns
+  short_description: Build reusable and maintainable React component APIs
+  default_prompt: Use $vercel-composition-patterns to improve these React components.
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
+  allow_implicit_invocation: true

@@ -1,0 +1,13 @@
+interface:
+  display_name: Accessibility
+  short_description: Focused accessibility guidance for software work
+  default_prompt: Use $accessibility for this task.
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
+  allow_implicit_invocation: true

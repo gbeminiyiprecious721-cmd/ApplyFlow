@@ -1,0 +1,13 @@
+interface:
+  display_name: Ui Ux Pro Max
+  short_description: Focused ui ux pro max guidance for software work
+  default_prompt: Use $ui-ux-pro-max for this task.
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
+  allow_implicit_invocation: true
