@@ -355,6 +355,7 @@
           </select>
           <select id="provider" aria-label="Source">
             <option value="jobicy">Jobicy (remote)</option>
+            <option value="remoteok">RemoteOK (remote)</option>
             <option value="adzuna">Adzuna (private API)</option>
             <option value="greenhouse">Greenhouse boards</option>
             <option value="lever">Lever boards</option>
@@ -594,7 +595,7 @@
           <label for="apSal">Minimum salary</label>
           <input id="apSal" type="number" placeholder="60000" />
           <label for="apSrc">Sources</label>
-          <select id="apSrc"><option value="jobicy">Jobicy</option><option value="adzuna">Adzuna</option><option value="greenhouse">Greenhouse</option><option value="lever">Lever</option></select>
+          <select id="apSrc"><option value="jobicy">Jobicy</option><option value="remoteok">RemoteOK</option><option value="adzuna">Adzuna</option><option value="greenhouse">Greenhouse</option><option value="lever">Lever</option></select>
           <label for="apExCo">Excluded companies</label>
           <input id="apExCo" type="text" placeholder="Comma separated" />
           <label for="apExKw">Excluded keywords</label>
@@ -3188,7 +3189,7 @@
       const url = raw.url || raw.redirect_url || raw.application_url || raw.jobUrl || '';
       const desc = String(raw.description || raw.snippet || '').replace(/<[^>]+>/g,' ');
       const remoteHint = String(raw.jobGeo || raw.remote_type || loc || '') + ' ' + desc + ' ' + provider;
-      const remote = /remote|worldwide|anywhere/i.test(remoteHint) ? 'Remote' : (/hybrid/i.test(remoteHint) ? 'Hybrid' : (/onsite|on-site|office/i.test(remoteHint) ? 'Onsite' : (provider === 'jobicy' ? 'Remote' : 'Onsite')));
+      const remote = /remote|worldwide|anywhere/i.test(remoteHint) ? 'Remote' : (/hybrid/i.test(remoteHint) ? 'Hybrid' : (/onsite|on-site|office/i.test(remoteHint) ? 'Onsite' : (provider === 'jobicy' || provider === 'remoteok' ? 'Remote' : 'Onsite')));
       const ats = detectAts(url, provider, desc).name;
       return {
         id: String(raw.id || provider + '-' + Date.now() + '-' + Math.random().toString(16).slice(2)),
@@ -3306,6 +3307,29 @@
         getApplicationUrl(j) { return j.url; },
         normalizeJob
       },
+      remoteok: {
+        async searchJobs(q, loc) {
+          const query = String(q || '').trim();
+          const res = await fetch('https://remoteok.com/api', {signal:AbortSignal.timeout(15000)});
+          if (!res.ok) throw new Error('unavailable');
+          const data = await res.json();
+          if (!Array.isArray(data)) throw new Error('unavailable');
+          let jobs = data.filter(j => j.id && j.position);
+          const minSal = Number(document.getElementById('sal').value) || 0;
+          if (minSal) jobs = jobs.filter(j => { const n = Number(j.salary_min||0); return !n || n >= minSal; });
+          const mapped = jobs.map(j => normalizeJob({
+            id: 'remoteok-' + j.id, company: j.company, title: j.position,
+            loc: j.location || 'Worldwide', jobGeo: 'Remote',
+            snippet: j.description, description: j.description,
+            url: j.url || j.apply_url, salary_min: j.salary_min, salary_max: j.salary_max,
+            date_posted: j.date
+          }, 'remoteok'));
+          return mapped.filter(j => searchRoleMatches(j,query) && searchLocationMatches(j,loc));
+        },
+        getJobDetails(j) { return j; },
+        getApplicationUrl(j) { return j.url; },
+        normalizeJob
+      },
       greenhouse: {
         async searchJobs(q) {
           const organic = await serperJobs((q||'engineer') + ' site:boards.greenhouse.io');
@@ -3361,7 +3385,8 @@
         activity('JOB_SEARCH_STARTED', 'Search on '+key+' for '+q);
         activity(mapped.length+'_JOBS_FOUND', mapped.length + ' listings from ' + key);
         activity('JOBS_DEDUPLICATED', 'Merged against stored listings');
-        document.getElementById('searchStatus').textContent = mapped.length ? mapped.length + ' relevant listings returned by ' + key + '. Saved opportunities are filtered by this role and location.' : (key === 'jobicy' ? 'Jobicy has no remote match for this search right now. It only covers a limited set of remote-friendly roles, so specific or local titles often come back empty. Try a broader keyword, or import a specific listing by URL below.' : 'No matching listings returned by '+key+'. Try another role, source or location. Your saved jobs are kept in Applications.');
+        const narrowSourceMessage = { jobicy: 'Jobicy has no remote match for this search right now. It only covers a limited set of remote-friendly roles, so specific or local titles often come back empty. Try a broader keyword, import a specific listing by URL below, or try RemoteOK as a second source.', remoteok: 'RemoteOK has no match for this search in its current listings. It only shows recent remote tech roles and does not support precise keyword search, so specific titles often come back empty. Try a broader keyword, import a specific listing by URL below, or try Jobicy as a second source.' };
+        document.getElementById('searchStatus').textContent = mapped.length ? mapped.length + ' relevant listings returned by ' + key + '. Saved opportunities are filtered by this role and location.' : (narrowSourceMessage[key] || 'No matching listings returned by '+key+'. Try another role, source or location. Your saved jobs are kept in Applications.');
         const strongN = mapped.filter(j => (j.score||0) >= 90).length;
         notify(mapped.length + ' listings found' + (strongN ? '. '+strongN+' strong jobs found.' : '.'), 'search');
         const need = (state.review||[]).filter(r => r.open !== false).length;
