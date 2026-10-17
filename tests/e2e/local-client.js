@@ -180,7 +180,11 @@
             if (body?.action === "DELETE_DATA")
               return { data: { ok: true }, error: null };
           }
+          if (name === "applyflow-capability-gateway" && body?.provider === "status") {
+            return { data: { sources: window.__E2E_SOURCE_READINESS__ || { adzuna: false, greenhouse: false, lever: false }, mailbox: { implemented: false, connected: false } }, error: null };
+          }
           if (name === "applyflow-adzuna-search") {
+            if (window.__E2E_ADZUNA_RESULTS__) return { data: { results: window.__E2E_ADZUNA_RESULTS__ }, error: null };
             // Mirrors the real applyflow-adzuna-search function's response when
             // ADZUNA_APP_ID/ADZUNA_APP_KEY are not configured (HTTP 501). No
             // real network call is made, and no credentials are involved.

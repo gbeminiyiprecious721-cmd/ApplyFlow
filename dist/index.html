@@ -3258,7 +3258,7 @@
           if (error) {
             let message = error.message;
             try { message = (await error.context.json()).error || message; } catch {}
-            throw new Error(/not configured/i.test(message) ? 'Connect Adzuna to search UK jobs.' : message);
+            throw new Error(/not configured/i.test(message) ? 'Adzuna is not connected yet. Choose another source.' : message);
           }
           if (data?.error) throw new Error(data.error);
           const rows = data.results || [];
@@ -3330,16 +3330,16 @@
         normalizeJob
       },
       greenhouse: {
-        async searchJobs(q) {
-          const organic = await serperJobs((q||'engineer') + ' site:boards.greenhouse.io');
+        async searchJobs(q, loc) {
+          const organic = await serperJobs((q||'engineer') + (loc?' '+loc:'') + ' (site:boards.greenhouse.io OR site:job-boards.greenhouse.io)');
           if (!organic.length) throw new Error('empty');
           return organic.map(r => normalizeJob({ title: r.title, snippet: r.snippet, url: r.link, company: (r.link||'').split('/')[3] || 'Board' }, 'greenhouse'));
         },
         getJobDetails(j) { return j; }, getApplicationUrl(j) { return j.application_url; }, normalizeJob
       },
       lever: {
-        async searchJobs(q) {
-          const organic = await serperJobs((q||'engineer') + ' site:jobs.lever.co');
+        async searchJobs(q, loc) {
+          const organic = await serperJobs((q||'engineer') + (loc?' '+loc:'') + ' (site:jobs.lever.co OR site:jobs.eu.lever.co)');
           if (!organic.length) throw new Error('empty');
           return organic.map(r => normalizeJob({ title: r.title, snippet: r.snippet, url: r.link, company: (r.link||'').split('/')[3] || 'Board' }, 'lever'));
         },
@@ -3358,7 +3358,7 @@
       }
     };
     async function runSearch() {
-      if (['adzuna','greenhouse','lever'].includes(document.getElementById('provider').value)) { toast('This job source is not connected. Choose an available source.'); return; }
+      if (['adzuna','greenhouse','lever'].includes(document.getElementById('provider').value) && !window.applyflowJobConnections?.isReady(document.getElementById('provider').value)) { toast('This job source is not connected. Choose an available source.'); return; }
 
       const q = document.getElementById('q').value.trim() || state.profile.titles || 'data scientist';
       const loc = document.getElementById('loc').value.trim() || state.profile.locations || '';
@@ -5249,6 +5249,7 @@
 <script src="product-refinements.js"></script>
 <script src="application-agent.js"></script>
 <script src="workspace-polish.js"></script>
+  <script src="job-connections.js"></script>
 <script>restoreSession().then(() => renderHydratedViews()).catch(() => setWorkspaceSync('restore-error','Could not restore your workspace. Retry before editing saved records.'));</script>
 </body>
 </html>
