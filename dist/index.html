@@ -378,7 +378,7 @@
           <button class="btn" id="analyseUrl" type="button">Analyse job URL</button>
         </div>
         <p class="meta" id="searchStatus">ATS detection covers Greenhouse, Lever, Workday, SmartRecruiters, Ashby, Teamtailor, iCIMS, and unknown boards. Automated fill is Greenhouse, Lever, and generic HTML; unsupported boards return ATS_UNSUPPORTED without crashing.</p>
-        <p class="meta" id="adzunaHint">Adzuna is EXTERNAL CONNECTION REQUIRED. Search uses only a server Adzuna path. It will not substitute another source. Status: Not configured until that connection exists.</p>
+        <p class="meta" id="adzunaHint">Adzuna searches run through a private server-side proxy; your Adzuna credentials are never sent to the browser. If Adzuna is not yet configured on the server, searching it shows a clear message rather than silently returning another source's results.</p>
         <p class="cap-error hidden" id="searchError"></p>
         <button class="btn hidden" id="searchRetry" type="button">Retry</button>
         <div id="jobList" class="card"></div>
@@ -3254,15 +3254,14 @@
           const dist = document.getElementById('distance').value;
           const posted = document.getElementById('posted').value;
           const p = page || searchPage || 1;
-          const res = await fetch('/api/adzuna/search', {
-            method: 'POST', credentials: 'same-origin',
-            signal: AbortSignal.timeout(15000),
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ what, where, salary, emp, dist, posted, page: p })
-          });
-          if (res.status === 404 || res.status === 501) throw new Error('Connect Adzuna to search UK jobs.');
-          const data = await capResponse(res);
-          const rows = data.results || data.jobs || [];
+          const { data, error } = await supabaseClient.functions.invoke('applyflow-adzuna-search', { body: { what, where, salary, emp, dist, posted, page: p } });
+          if (error) {
+            let message = error.message;
+            try { message = (await error.context.json()).error || message; } catch {}
+            throw new Error(/not configured/i.test(message) ? 'Connect Adzuna to search UK jobs.' : message);
+          }
+          if (data?.error) throw new Error(data.error);
+          const rows = data.results || [];
           if (!rows.length) throw new Error('empty');
           return rows.map(r => normalizeJob(r, 'adzuna'));
         },
@@ -3359,7 +3358,7 @@
       }
     };
     async function runSearch() {
-      if (['adzuna','greenhouse','lever'].includes(document.getElementById('provider').value)) { toast('This job source is not connected. Choose an available source.'); return; }
+      if (['greenhouse','lever'].includes(document.getElementById('provider').value)) { toast('This job source is not connected. Choose an available source.'); return; }
 
       const q = document.getElementById('q').value.trim() || state.profile.titles || 'data scientist';
       const loc = document.getElementById('loc').value.trim() || state.profile.locations || '';
@@ -3393,8 +3392,9 @@
         if (need) notify(need + ' applications need answers.', 'review');
       } catch (e) {
         const msg = String(e.message||e);
-        showSearchError(true, /adzuna/i.test(msg) ? 'Connect Adzuna to search UK jobs.' : (/empty/i.test(msg) ? 'No matching jobs found. Try expanding your location or lowering your match threshold.' : 'Job search is unavailable. Please retry.'));
-        document.getElementById('searchStatus').textContent = /adzuna/i.test(msg) ? 'Connect Adzuna to search UK jobs.' : '';
+        const notConnected = /connect adzuna/i.test(msg);
+        showSearchError(true, notConnected ? msg : (/empty/i.test(msg) ? 'No matching jobs found. Try expanding your location or lowering your match threshold.' : (key === 'adzuna' ? msg : 'Job search is unavailable. Please retry.')));
+        document.getElementById('searchStatus').textContent = notConnected ? msg : '';
       } finally {
         document.getElementById('searchBtn').disabled = false;
       }
@@ -4901,7 +4901,7 @@
           const bearer = /Bearer\s+[A-Za-z0-9._\-*~]{24,}/.test(blob);
           return !(jwt || sk || iron || bearer);
         })(), 'No token-shaped client credential');
-        pass('Adzuna not masquerading', /\/api\/adzuna\/search/.test(JobProviders.adzuna.searchJobs.toString()) && !/site:adzuna/.test(JobProviders.adzuna.searchJobs.toString()), 'Adzuna uses server API path only');
+        pass('Adzuna not masquerading', /applyflow-adzuna-search/.test(JobProviders.adzuna.searchJobs.toString()) && !/site:adzuna/.test(JobProviders.adzuna.searchJobs.toString()), 'Adzuna uses a private server function, never a client-side key or site: scrape');
         pass('resume parsing fallback', typeof parseResumeOnServer === 'function' && typeof extractResumeLocally === 'function', 'Server-first with private local PDF/DOCX fallback; legacy DOC remains explicit');
         pass('docx download', typeof downloadDocx === 'function', 'DOCX zip helper present');
         pass('managed auth ui', !!uiElement('acctPass') && !!uiElement('magicBtn'), 'Sign-in, create account, magic link present');

@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
-    "test": "node tests/workspace.test.cjs && node tests/workspace-flows.test.cjs && node tests/preferences.test.cjs && node tests/extension.test.cjs && node tests/autofill.test.cjs && node tests/agent.test.mjs && node tests/backend.test.mjs && node tests/pdf.test.cjs && node tests/assets.test.cjs && node tests/html-response.test.mjs && node tests/e2e-config.test.cjs && node tests/local-supabase-config.test.mjs",
+    "test": "node tests/workspace.test.cjs && node tests/workspace-flows.test.cjs && node tests/preferences.test.cjs && node tests/extension.test.cjs && node tests/autofill.test.cjs && node tests/agent.test.mjs && node tests/backend.test.mjs && node tests/adzuna-search.test.mjs && node tests/pdf.test.cjs && node tests/assets.test.cjs && node tests/html-response.test.mjs && node tests/e2e-config.test.cjs && node tests/local-supabase-config.test.mjs",
     "build": "node scripts/build-static-worker.mjs",
     "check:deployed": "node scripts/check-deployed-content-type.mjs",
     "test:e2e": "playwright test"

@@ -1,3 +1,18 @@
+# Adzuna search proxy
+
+`adzuna-search.js` is a separate, minimal Supabase Edge Function (`applyflow-adzuna-search`) that proxies Discover's Adzuna searches. It exists because Adzuna's `app_id`/`app_key` are not safe to send from the browser (unlike Jobicy/RemoteOK, which are keyless public APIs) — this function holds them server-side and is the only thing that ever calls `api.adzuna.com` with them.
+
+No database connection is needed; it only checks the caller's Supabase session (same pattern as `application-agent.js`'s `auth()`) and the request `Origin`, then proxies the search and flattens Adzuna's nested `company`/`location` objects into the flat strings the frontend's `normalizeJob()` already expects from every other source.
+
+**Deploy and configure (run by the project owner, never in chat):** deploy `adzuna-search.js` as a new Supabase Edge Function named `applyflow-adzuna-search`, the same way `application-agent.js` was deployed as `applyflow-application-agent` (this repo doesn't capture that deployment step for either function, so use whatever process — Supabase CLI or dashboard — you already used for that one). Then set `ADZUNA_APP_ID` and `ADZUNA_APP_KEY` as secrets/environment variables on that function, the same way `BROWSERBASE_API_KEY` is already set on `applyflow-application-agent`. If you use the Supabase CLI, that's typically:
+
+```
+supabase functions deploy applyflow-adzuna-search
+supabase secrets set ADZUNA_APP_ID=your-app-id ADZUNA_APP_KEY=your-app-key
+```
+
+Until both secrets are set, the function responds `501` and the frontend shows "Connect Adzuna to search UK jobs." — the same honest, already-tested "not configured" path used everywhere else in this app, not a silent failure. Run `node tests/adzuna-search.test.mjs` to verify the function's logic against a mocked Adzuna API (origin/auth guards, result normalization, country mapping, rate-limit/upstream-failure handling) — this does not require real credentials and does not call the real Adzuna API. Live behavior against the real Adzuna API has not been verified from this environment and needs checking after deployment.
+
 # Application agent V2
 
 The existing static Site and legacy preparation worker are preserved. The new service is `applyflow-application-agent`; schema is in `agent-schema.sql`. Runtime credentials are supplied by Supabase: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_DB_URL`, and `SUPABASE_SERVICE_ROLE_KEY`. Browserbase credentials remain in the existing server-only Vault record. No secrets belong in source.

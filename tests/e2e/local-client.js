@@ -180,6 +180,20 @@
             if (body?.action === "DELETE_DATA")
               return { data: { ok: true }, error: null };
           }
+          if (name === "applyflow-adzuna-search") {
+            // Mirrors the real applyflow-adzuna-search function's response when
+            // ADZUNA_APP_ID/ADZUNA_APP_KEY are not configured (HTTP 501). No
+            // real network call is made, and no credentials are involved.
+            return {
+              data: null,
+              error: {
+                message: "Adzuna is not configured.",
+                context: {
+                  json: async () => ({ error: "Adzuna is not configured." }),
+                },
+              },
+            };
+          }
           return {
             data: null,
             error: {
