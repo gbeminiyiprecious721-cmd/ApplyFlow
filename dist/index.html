@@ -3361,7 +3361,7 @@
         activity('JOB_SEARCH_STARTED', 'Search on '+key+' for '+q);
         activity(mapped.length+'_JOBS_FOUND', mapped.length + ' listings from ' + key);
         activity('JOBS_DEDUPLICATED', 'Merged against stored listings');
-        document.getElementById('searchStatus').textContent = mapped.length ? mapped.length + ' relevant listings returned by ' + key + '. Saved opportunities are filtered by this role and location.' : 'No matching listings returned by '+key+'. Try another role, source or location. Your saved jobs are kept in Applications.';
+        document.getElementById('searchStatus').textContent = mapped.length ? mapped.length + ' relevant listings returned by ' + key + '. Saved opportunities are filtered by this role and location.' : (key === 'jobicy' ? 'Jobicy has no remote match for this search right now. It only covers a limited set of remote-friendly roles, so specific or local titles often come back empty. Try a broader keyword, or import a specific listing by URL below.' : 'No matching listings returned by '+key+'. Try another role, source or location. Your saved jobs are kept in Applications.');
         const strongN = mapped.filter(j => (j.score||0) >= 90).length;
         notify(mapped.length + ' listings found' + (strongN ? '. '+strongN+' strong jobs found.' : '.'), 'search');
         const need = (state.review||[]).filter(r => r.open !== false).length;
