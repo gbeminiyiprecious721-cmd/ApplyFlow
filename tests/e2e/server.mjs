@@ -8,6 +8,7 @@ import {
   localSupabaseConfig,
   proxyLocalAdzunaSearch,
   proxyLocalAgentStatus,
+  proxyLocalCapabilityGateway,
   renderLocalSetupPage,
   verifyLocalSupabaseConfig,
 } from "../../scripts/local-supabase-config.mjs";
@@ -213,6 +214,23 @@ const server = http.createServer(async (req, res) => {
         duplex: req.method === "POST" ? "half" : undefined,
       });
       const response = await proxyLocalAdzunaSearch(request);
+      res.writeHead(response.status, Object.fromEntries(response.headers));
+      res.end(Buffer.from(await response.arrayBuffer()));
+      return;
+    }
+    if (localSetupMode && url.pathname === "/__local/capability-gateway") {
+      if (!localConfig) {
+        res.writeHead(401);
+        res.end();
+        return;
+      }
+      const request = new Request("http://127.0.0.1/__local/capability-gateway", {
+        method: req.method,
+        headers: req.headers,
+        body: req.method === "POST" ? req : undefined,
+        duplex: req.method === "POST" ? "half" : undefined,
+      });
+      const response = await proxyLocalCapabilityGateway(request);
       res.writeHead(response.status, Object.fromEntries(response.headers));
       res.end(Buffer.from(await response.arrayBuffer()));
       return;

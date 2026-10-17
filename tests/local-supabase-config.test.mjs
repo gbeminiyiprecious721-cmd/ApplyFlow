@@ -6,6 +6,7 @@ import {
   localSupabaseConfig,
   proxyLocalAdzunaSearch,
   proxyLocalAgentStatus,
+  proxyLocalCapabilityGateway,
   renderLocalSetupPage,
   verifyLocalSupabaseConfig,
 } from "../scripts/local-supabase-config.mjs";
@@ -65,15 +66,25 @@ await localWindow.fetch(
     body: JSON.stringify({ what: "data analyst", where: "United Kingdom" }),
   },
 );
+await localWindow.fetch(
+  `${projectUrl}/functions/v1/applyflow-capability-gateway`,
+  {
+    method: "POST",
+    headers: { Authorization: "Bearer user-session", apikey: publishableKey },
+    body: JSON.stringify({ provider: "serper", body: { path: "/search", method: "POST", body: { q: "engineer site:boards.greenhouse.io", num: 10 } } }),
+  },
+);
 const remoteWrite = await localWindow.fetch(`${projectUrl}/rest/v1/profiles`, { method: "POST" });
 const externalWrite = await localWindow.fetch("https://provider.example/run", { method: "POST" });
-assert.equal(forwarded, 4);
+assert.equal(forwarded, 5);
 assert.equal(new URL(forwardedRequests[2].url).pathname, "/__local/agent-status");
 assert.equal(forwardedRequests[2].headers.get("authorization"), "Bearer user-session");
 assert.deepEqual(await forwardedRequests[2].clone().json(), { action: "STATUS" });
 assert.equal(new URL(forwardedRequests[3].url).pathname, "/__local/adzuna-search");
 assert.equal(forwardedRequests[3].headers.get("authorization"), "Bearer user-session");
 assert.deepEqual(await forwardedRequests[3].clone().json(), { what: "data analyst", where: "United Kingdom" });
+assert.equal(new URL(forwardedRequests[4].url).pathname, "/__local/capability-gateway");
+assert.equal(forwardedRequests[4].headers.get("authorization"), "Bearer user-session");
 assert.equal(remoteWrite.status, 403);
 assert.equal(externalWrite.status, 403);
 assert.throws(
@@ -227,4 +238,45 @@ const noAuth = await proxyLocalAdzunaSearch(
 assert.equal(noAuth.status, 401);
 assert.equal(adzunaProxyCalls, 1, "No upstream call without an authorization header");
 
-console.log("Local Supabase config: project boundary, public-key formats, read-only validation and Adzuna search proxy passed.");
+let gatewayProxyCalls = 0;
+const gatewayBody = { provider: "serper", body: { path: "/search", method: "POST", body: { q: "engineer site:boards.greenhouse.io", num: 10 } } };
+const gatewayResponse = await proxyLocalCapabilityGateway(
+  new Request("http://127.0.0.1/__local/capability-gateway", {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer user-session",
+      apikey: publishableKey,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(gatewayBody),
+  }),
+  async (url, options) => {
+    gatewayProxyCalls++;
+    assert.equal(url, `${projectUrl}/functions/v1/applyflow-capability-gateway`);
+    assert.equal(options.headers.Authorization, "Bearer user-session");
+    assert.equal(
+      options.headers.Origin,
+      "https://applyflow-review.gbeminiyiprecious721.chatgpt.site",
+    );
+    assert.deepEqual(JSON.parse(options.body), gatewayBody);
+    return new Response('{"organic":[]}', { status: 200 });
+  },
+);
+assert.equal(gatewayResponse.status, 200);
+assert.deepEqual(await gatewayResponse.json(), { organic: [] });
+assert.equal(gatewayProxyCalls, 1);
+const gatewayNoAuth = await proxyLocalCapabilityGateway(
+  new Request("http://127.0.0.1/__local/capability-gateway", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(gatewayBody),
+  }),
+  async () => {
+    gatewayProxyCalls++;
+    return new Response("unexpected");
+  },
+);
+assert.equal(gatewayNoAuth.status, 401);
+assert.equal(gatewayProxyCalls, 1, "No upstream call without an authorization header");
+
+console.log("Local Supabase config: project boundary, public-key formats, read-only validation, Adzuna search proxy and capability-gateway proxy passed.");
