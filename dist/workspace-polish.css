@@ -11,3 +11,8 @@
 .candidate-fieldset{border:1px solid var(--line);border-radius:12px;padding:8px 20px 22px;margin:24px 0}.candidate-fieldset legend{font-size:13px;color:var(--muted);padding:0 8px}.profile-grid{display:block!important}.form-details>.form-grid{margin-top:8px}
 
 .agent-statusbar p[data-tone=warning]{background:#d9770612;color:var(--warn);padding:10px 14px;border-radius:8px;font-weight:500}
+
+#view-search .search-tools{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin:16px 0}
+#view-search .filter-details:first-of-type .filters{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));align-items:end}
+#view-search .filter-details:first-of-type .filters>#pagePrev,#view-search .filter-details:first-of-type .filters>#pageNext,#view-search .filter-details:first-of-type .filters>#pageLabel{align-self:center}
+@media(max-width:600px){#view-search .filter-details:first-of-type .filters{grid-template-columns:1fr 1fr}}
