@@ -13,7 +13,7 @@ async function request(body,authorization='Bearer user-token',requestOrigin=orig
 
 // Origin and auth are enforced before anything else.
 assert.equal((await request({what:'analyst'},undefined,'https://evil.example')).status,403);
-assert.equal((await request({what:'analyst'},'Bearer bad')).status,400);
+assert.equal((await request({what:'analyst'},'Bearer bad')).status,401);
 assert.equal(adzunaCalls.length,0,'No Adzuna request should fire for rejected origin/auth');
 
 // Without configured credentials, the function fails clearly rather than silently.

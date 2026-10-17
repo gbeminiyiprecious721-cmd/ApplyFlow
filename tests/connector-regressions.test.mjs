@@ -1,0 +1,18 @@
+import fs from 'node:fs';
+import vm from 'node:vm';
+import assert from 'node:assert/strict';
+let handle;const calls=[];
+const env={SUPABASE_URL:'https://auth.example',SUPABASE_ANON_KEY:'mock-public',ADZUNA_APP_ID:'mock-id',ADZUNA_APP_KEY:'mock-key',APPLYFLOW_APP_ORIGIN:'https://app.example'};
+let upstreamStatus=200;
+const context=vm.createContext({Deno:{env:{get:k=>env[k]},serve:fn=>handle=fn},fetch:async(url,options={})=>{if(url.endsWith('/auth/v1/user'))return Response.json(options.headers.Authorization==='Bearer valid'?{id:'owner'}:{},{status:options.headers.Authorization==='Bearer valid'?200:401});calls.push(url);return Response.json({results:[],error:{message:'private upstream detail'}},{status:upstreamStatus});},Request,Response,URL,URLSearchParams,AbortSignal,Number,String,JSON,Math,Date});
+vm.runInContext(fs.readFileSync('backend/adzuna-search.js','utf8'),context);
+const req=async(body={},authorization='Bearer valid')=>handle(new Request('https://edge.example',{method:'POST',headers:{Origin:env.APPLYFLOW_APP_ORIGIN,Authorization:authorization},body:JSON.stringify(body)}));
+assert.equal((await req({},'Bearer invalid')).status,401,'Invalid sessions must return 401');
+assert.equal(calls.length,0);
+await req({where:'Australia',page:2.9});
+assert.equal(new URL(calls.at(-1)).pathname,'/v1/api/jobs/au/search/2','Australia is not US; page must be an integer');
+await req({where:'Austin, United States'});assert.equal(new URL(calls.at(-1)).pathname,'/v1/api/jobs/us/search/1');
+upstreamStatus=401;const r=await req({});assert.equal(r.status,502);assert.doesNotMatch(await r.text(),/private upstream detail|mock-key/);
+const health=await handle(new Request('https://edge.example?health=1',{headers:{Origin:env.APPLYFLOW_APP_ORIGIN}}));
+assert.equal(health.status,200);const h=await health.json();assert.equal(h.configured,true);assert.doesNotMatch(JSON.stringify(h),/mock-key|mock-id/);
+console.log('Connector regressions: auth status, country boundaries, integer pagination, credential redaction and readiness passed.');
