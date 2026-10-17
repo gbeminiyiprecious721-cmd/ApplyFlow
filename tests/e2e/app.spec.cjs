@@ -193,17 +193,13 @@ test("retired controls absent; unavailable sources actually disabled", async ({
   ])
     await expect(page.locator(selector)).toHaveCount(0);
   for (const id of ["provider", "apSrc"])
-    for (const value of ["greenhouse", "lever"])
+    for (const value of ["adzuna", "greenhouse", "lever"])
       await expect(
         page.locator("#" + id + " option[value=" + value + "]"),
       ).toBeDisabled();
-  // Adzuna now routes through a real server proxy (applyflow-adzuna-search) and is enabled
-  // in the UI even though no credentials are configured in this local fixture; selecting it
-  // and searching surfaces the honest "Connect Adzuna" message tested in app.spec.cjs below.
-  for (const id of ["provider", "apSrc"])
-    await expect(
-      page.locator("#" + id + " option[value=adzuna]"),
-    ).toBeEnabled();
+  // Adzuna has a real server proxy ready (applyflow-adzuna-search, backend/adzuna-search.js,
+  // tests/adzuna-search.test.mjs) but stays disabled in the UI, same as Greenhouse/Lever,
+  // until the project owner actually deploys that function to Supabase — see HANDOFF.md.
   await expect(page.locator("#mailboxSync")).toBeDisabled();
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
@@ -219,21 +215,6 @@ test("retired controls absent; unavailable sources actually disabled", async ({
       .locator("nav[aria-label=Primary] [data-view=" + view + "]")
       .click();
   expect(errors).toEqual([]);
-});
-test("Adzuna search shows an honest message when the server proxy has no credentials configured", async ({
-  page,
-}) => {
-  await signup(page);
-  await onboard(page);
-  await page.locator("nav[aria-label=Primary] [data-view=search]").click();
-  await page.getByText("More filters and sources", { exact: true }).click();
-  await page.locator("#provider").selectOption("adzuna");
-  await page.locator("#q").fill("data analyst");
-  await page.locator("#searchBtn").click();
-  await expect(page.locator("#searchStatus")).toHaveText(
-    "Connect Adzuna to search UK jobs.",
-    { timeout: 15000 },
-  );
 });
 test("primary navigation labels remain readable when hovered", async ({
   page,

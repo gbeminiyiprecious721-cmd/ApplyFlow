@@ -3358,7 +3358,7 @@
       }
     };
     async function runSearch() {
-      if (['greenhouse','lever'].includes(document.getElementById('provider').value)) { toast('This job source is not connected. Choose an available source.'); return; }
+      if (['adzuna','greenhouse','lever'].includes(document.getElementById('provider').value)) { toast('This job source is not connected. Choose an available source.'); return; }
 
       const q = document.getElementById('q').value.trim() || state.profile.titles || 'data scientist';
       const loc = document.getElementById('loc').value.trim() || state.profile.locations || '';
