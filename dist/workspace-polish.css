@@ -12,6 +12,10 @@
 
 .agent-statusbar p[data-tone=warning]{background:#d9770612;color:var(--warn);padding:10px 14px;border-radius:8px;font-weight:500}
 
+/* .welcome-gate .hidden (onboarding.css) only covers the sign-in screen; everywhere
+   else in the app toggles the "hidden" class on tabs/panels expecting this general rule. */
+.hidden{display:none!important}
+
 #view-search .search-tools{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin:16px 0}
 #view-search .filter-details:first-of-type .filters{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));align-items:end}
 #view-search .filter-details:first-of-type .filters>#pagePrev,#view-search .filter-details:first-of-type .filters>#pageNext,#view-search .filter-details:first-of-type .filters>#pageLabel{align-self:center}
