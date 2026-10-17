@@ -16,3 +16,8 @@
 #view-search .filter-details:first-of-type .filters{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));align-items:end}
 #view-search .filter-details:first-of-type .filters>#pagePrev,#view-search .filter-details:first-of-type .filters>#pageNext,#view-search .filter-details:first-of-type .filters>#pageLabel{align-self:center}
 @media(max-width:600px){#view-search .filter-details:first-of-type .filters{grid-template-columns:1fr 1fr}}
+
+#applicationRules,#exclusionRules{display:grid;grid-template-columns:1fr 1fr;gap:4px 20px;align-items:end}
+#applicationRules label,#exclusionRules label{margin-top:0}
+#applicationRules>h3,#exclusionRules>h3,#applicationRules>#saveAgentRules,#exclusionRules>label:has(input[type=checkbox]),#exclusionRules>p.meta{grid-column:1/-1}
+@media(max-width:600px){#applicationRules,#exclusionRules{grid-template-columns:1fr}}
