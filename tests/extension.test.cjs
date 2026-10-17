@@ -1,13 +1,18 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
-const state={},handlers={},requests=[];
-const chrome={runtime:{id:'test-extension',getURL:p=>'chrome-extension://test-extension/'+p,onMessageExternal:{addListener:f=>handlers.external=f},onMessage:{addListener:f=>handlers.internal=f}},storage:{session:{get:async keys=>Object.fromEntries((Array.isArray(keys)?keys:[keys]).map(k=>[k,state[k]])),set:async values=>Object.assign(state,values),remove:async keys=>{for(const k of [].concat(keys))delete state[k];}}}};
+const state={},localState={},handlers={},requests=[];
+const chrome={runtime:{id:'test-extension',getURL:p=>'chrome-extension://test-extension/'+p,onMessageExternal:{addListener:f=>handlers.external=f},onMessage:{addListener:f=>handlers.internal=f}},storage:{session:{get:async keys=>Object.fromEntries((Array.isArray(keys)?keys:[keys]).map(k=>[k,state[k]])),set:async values=>Object.assign(state,values),remove:async keys=>{for(const k of [].concat(keys))delete state[k];}},local:{get:async keys=>Object.fromEntries((Array.isArray(keys)?keys:[keys]).map(k=>[k,localState[k]])),set:async values=>Object.assign(localState,values),remove:async keys=>{for(const k of [].concat(keys))delete localState[k];}}}};
 const fetch=async(url,options={})=>{requests.push({url,options});return {ok:true,json:async()=>url.includes('/auth/')?{id:'owner-a',email:'alex@example.com'}:url.includes('/profiles?')?[{full_name:'Alex Example',email:'alex@example.com'}]:url.includes('/answer_bank?')?[{normalized_question:'first_name',answer:'Alex',verified:true,sensitive:false}]:{}};};
 const context=vm.createContext({chrome,fetch,URL,console});vm.runInContext(fs.readFileSync('dist/clipper/background.js','utf8'),context);
 const origin='https://applyflow-review.gbeminiyiprecious721.chatgpt.site/';
 const external={url:origin,frameId:0},popup={id:chrome.runtime.id,url:chrome.runtime.getURL('popup.html')};
 function send(handler,message,sender){return new Promise(resolve=>{if(handlers[handler](message,sender,resolve)!==true)resolve({ok:false});});}
 (async()=>{
- let r=await send('external',{type:'PAIR',accessToken:'mock-token',expiresAt:Date.now()/1000+600},{url:'https://evil.example/',frameId:0});assert.equal(r.ok,false);assert.equal(requests.length,0);
+ let r=await send('external',{type:'PAIR',accessToken:'mock-token',expiresAt:Date.now()/1000+600},external);assert.equal(r.ok,false);assert.match(r.error,/project key/);
+ r=await send('internal',{type:'SET_KEY',key:'eyJhbGciOiJIUzI1NiJ9'},popup);assert.equal(r.ok,false);
+ r=await send('internal',{type:'SET_KEY',key:'not-a-real-key'},{...popup,url:'https://evil.example/'});assert.equal(r.ok,false);assert.equal(localState.projectKey,undefined);
+ r=await send('internal',{type:'SET_KEY',key:'sb_publishable_test-only-not-a-real-key'},popup);assert.equal(r.ok,true);assert.equal(localState.projectKey,'sb_publishable_test-only-not-a-real-key');
+ assert.equal((await send('internal',{type:'STATUS'},popup)).hasKey,true);
+ r=await send('external',{type:'PAIR',accessToken:'mock-token',expiresAt:Date.now()/1000+600},{url:'https://evil.example/',frameId:0});assert.equal(r.ok,false);assert.equal(requests.length,0);
  r=await send('external',{type:'PAIR',accessToken:'mock-token',expiresAt:Date.now()/1000+600},{...external,frameId:1});assert.equal(r.ok,false);
  r=await send('external',{type:'PAIR',accessToken:'mock-token',expiresAt:'not-a-date'},external);assert.equal(r.ok,false);
  r=await send('external',{type:'PAIR',accessToken:'mock-token',expiresAt:Date.now()/1000+600},external);assert.equal(r.pending,true);assert.equal((await send('internal',{type:'STATUS'},popup)).paired,false);
