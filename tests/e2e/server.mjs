@@ -6,6 +6,7 @@ import { createStaticHandler } from "../../worker/static-response.mjs";
 import {
   injectLocalSupabaseConfig,
   localSupabaseConfig,
+  proxyLocalAdzunaSearch,
   proxyLocalAgentStatus,
   renderLocalSetupPage,
   verifyLocalSupabaseConfig,
@@ -195,6 +196,23 @@ const server = http.createServer(async (req, res) => {
         duplex: req.method === "POST" ? "half" : undefined,
       });
       const response = await proxyLocalAgentStatus(request);
+      res.writeHead(response.status, Object.fromEntries(response.headers));
+      res.end(Buffer.from(await response.arrayBuffer()));
+      return;
+    }
+    if (localSetupMode && url.pathname === "/__local/adzuna-search") {
+      if (!localConfig) {
+        res.writeHead(401);
+        res.end();
+        return;
+      }
+      const request = new Request("http://127.0.0.1/__local/adzuna-search", {
+        method: req.method,
+        headers: req.headers,
+        body: req.method === "POST" ? req : undefined,
+        duplex: req.method === "POST" ? "half" : undefined,
+      });
+      const response = await proxyLocalAdzunaSearch(request);
       res.writeHead(response.status, Object.fromEntries(response.headers));
       res.end(Buffer.from(await response.arrayBuffer()));
       return;

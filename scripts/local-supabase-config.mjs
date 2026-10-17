@@ -103,6 +103,21 @@ function makeReadOnlyFetch(upstreamFetch, localOrigin, supabaseOrigin) {
           );
         }
       }
+      if (
+        method === "POST" &&
+        url.pathname.endsWith("/functions/v1/applyflow-adzuna-search")
+      ) {
+        const request =
+          input instanceof Request ? input : new Request(input, init);
+        return upstreamFetch(
+          new Request(`${localOrigin}/__local/adzuna-search`, {
+            method: "POST",
+            headers: new Headers(request.headers),
+            body: await request.clone().arrayBuffer(),
+            credentials: "omit",
+          }),
+        );
+      }
     }
     return Promise.resolve(
       new Response(
@@ -223,6 +238,60 @@ export async function proxyLocalAgentStatus(request, fetchImpl = fetch) {
   } catch {
     return new Response(
       JSON.stringify({ message: "Agent status is unavailable from this network." }),
+      {
+        status: 502,
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+          "Cache-Control": "no-store",
+        },
+      },
+    );
+  }
+}
+
+export async function proxyLocalAdzunaSearch(request, fetchImpl = fetch) {
+  if (request.method !== "POST") {
+    return new Response(null, { status: 405, headers: { Allow: "POST" } });
+  }
+  const authorization = request.headers.get("authorization") || "";
+  const apiKey = request.headers.get("apikey") || "";
+  if (!/^Bearer\s+\S+/i.test(authorization) || !apiKey) {
+    return new Response(null, { status: 401 });
+  }
+  let body;
+  try {
+    body = await request.text();
+    JSON.parse(body || "{}");
+  } catch {
+    return new Response(null, { status: 400 });
+  }
+
+  try {
+    const response = await fetchImpl(
+      `${LOCAL_SUPABASE_URL}/functions/v1/applyflow-adzuna-search`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: authorization,
+          apikey: apiKey,
+          Origin: "https://applyflow-review.gbeminiyiprecious721.chatgpt.site",
+          "Content-Type": "application/json",
+        },
+        body,
+        signal: AbortSignal.timeout(15000),
+      },
+    );
+    return new Response(await response.text(), {
+      status: response.status,
+      headers: {
+        "Content-Type":
+          response.headers.get("content-type") || "application/json; charset=utf-8",
+        "Cache-Control": "no-store",
+      },
+    });
+  } catch {
+    return new Response(
+      JSON.stringify({ message: "Adzuna search is unavailable from this network." }),
       {
         status: 502,
         headers: {
